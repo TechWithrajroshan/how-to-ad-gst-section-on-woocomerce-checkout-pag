@@ -1,0 +1,74 @@
+// -------------gst in checkout-------------------------
+
+add_filter('woocommerce_billing_fields' , 'display_billing_gst_fields');
+function display_billing_gst_fields($billing_fields){
+    $billing_fields['billing_gst_no'] = array(
+        'type' => 'text',
+        'label' =>  __('GST number',  'woocommerce' ),
+        'class' => array('form-row-wide'),
+        'required' => false,
+        'clear' => true,
+        'priority' => 35, // To change the field location increase or decrease this value
+    );
+ 
+    return $billing_fields;
+}
+
+
+add_filter( 'woocommerce_order_formatted_billing_address', 'custom_add_gst_formatted_billing_address', 10, 2 );
+function custom_add_gst_formatted_billing_address( $fields, $WC_Order  ) {
+    $fields['gst_no'] = $WC_Order->billing_gst_no;
+
+    return $fields;
+}
+
+
+add_filter( 'woocommerce_formatted_address_replacements', 'custom_formatted_address_replacements', 10, 2 );
+function custom_formatted_address_replacements( $replacements, $args  ) {
+	
+	
+    $replacements['{gst_no}'] = ! empty($args['gst_no']) ? $args['gst_no'] : '';
+    $replacements['{gst_no_upper}'] = ! empty($args['gst_no']) ? strtoupper($args['gst_no']) : '';
+ 
+    return $replacements;
+}
+ 
+ 
+add_filter( 'woocommerce_localisation_address_formats', 'custom_localisation_address_format' );
+function custom_localisation_address_format( $formats ) {
+	
+ 
+    foreach($formats as $country => $string_address ) {
+		
+        $formats[$country] = str_replace('{company}', "{company}\n{gst_no_upper}", $string_address);
+    }
+    return $formats;
+}
+ 
+ 
+add_filter( 'woocommerce_customer_meta_fields', 'custom_customer_meta_fields' );
+function custom_customer_meta_fields( $fields ) {
+    $fields['billing']['fields']['billing_gst_no'] = array(
+        'label'       => __( 'GST number', 'woocommerce' )
+    );
+ 
+    return $fields;
+}
+ 
+ 
+add_filter( 'woocommerce_admin_billing_fields', 'custom_admin_billing_fields' );
+function custom_admin_billing_fields( $fields ) {
+    $fields['gst_no'] = array(
+        'label' => __( 'GST number', 'woocommerce' ),
+        'show'  => true
+    );
+ 
+    return $fields;
+}
+ 
+add_filter( 'woocommerce_found_customer_details', 'custom_found_customer_details' );
+function custom_found_customer_details( $customer_data ) {
+    $customer_data['billing_gst_no'] = get_user_meta( $_POST['user_id'], 'billing_gst_no', true );
+ 
+    return $customer_data;
+}
